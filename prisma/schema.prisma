@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+
+  email     String   @unique
+  password  String
+  role      String   @default("student")
+
+  name      String?
+  studentId String?  @unique
+  major     String?
+  grade     String?
+  bio       String?
+  avatar    String?
+
+  createdClubs          Club[]            @relation("ClubCreator")
+  clubApplications      ClubApplication[]
+  reviewedApplications  ClubApplication[] @relation("ApplicationReviewer")
+  clubMemberships       ClubMember[]
+  eventSignups          EventSignup[]
+  eventComments         EventComment[]
+  createdAnnouncements  Announcement[]    @relation("AnnouncementCreator")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Club {
+  id          Int      @id @default(autoincrement())
+
+  name        String   @unique
+  description String?
+  category    String?
+  logo        String?
+  status      String   @default("active")
+
+  createdById Int?
+  createdBy   User?    @relation("ClubCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  applications  ClubApplication[]
+  members       ClubMember[]
+  events        Event[]
+  announcements Announcement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ClubApplication {
+  id       Int    @id @default(autoincrement())
+
+  clubId   Int
+  userId   Int
+  reason   String
+  status   String @default("pending")
+
+  reviewedById Int?
+  reviewedAt   DateTime?
+
+  club       Club  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("ApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clubId, userId])
+}
+
+model ClubMember {
+  id       Int    @id @default(autoincrement())
+
+  clubId   Int
+  userId   Int
+  role     String @default("member")
+
+  club     Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  joinedAt DateTime @default(now())
+
+  @@unique([clubId, userId])
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+
+  clubId      Int
+  title       String
+  description String?
+  location    String?
+  startTime   DateTime
+  endTime     DateTime
+  capacity    Int?
+  poster      String?
+  status      String   @default("published")
+
+  club        Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  signups     EventSignup[]
+  comments    EventComment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EventSignup {
+  id       Int    @id @default(autoincrement())
+
+  eventId  Int
+  userId   Int
+  status   String @default("registered")
+
+  event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([eventId, userId])
+}
+
+model EventComment {
+  id        Int      @id @default(autoincrement())
+
+  eventId   Int
+  userId    Int
+  content   String
+
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Announcement {
+  id          Int      @id @default(autoincrement())
+
+  clubId      Int
+  createdById Int?
+
+  title       String
+  content     String
+  status      String   @default("published")
+  isPinned    Boolean  @default(false)
+
+  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  createdBy   User?    @relation("AnnouncementCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
