@@ -20,18 +20,16 @@ function getCommentIncludeFields() {
     user: {
       select: getUserSafeFields(),
     },
-    event: {
+    club: {
       select: {
         id: true,
-        title: true,
-        clubId: true,
-        club: {
-          select: {
-            id: true,
-            name: true,
-            createdById: true,
-          },
-        },
+        name: true,
+        chineseName: true,
+        englishName: true,
+        category: true,
+        logo: true,
+        status: true,
+        createdById: true,
       },
     },
   };
@@ -50,9 +48,8 @@ function canDeleteComment(user, comment) {
 
   if (
     user.role === "club_admin" &&
-    comment.event &&
-    comment.event.club &&
-    comment.event.club.createdById === user.id
+    comment.club &&
+    comment.club.createdById === user.id
   ) {
     return true;
   }
@@ -60,27 +57,27 @@ function canDeleteComment(user, comment) {
   return false;
 }
 
-async function getEventComments(req, res) {
+async function getClubComments(req, res) {
   try {
-    const eventId = Number(req.params.id);
+    const clubId = req.params.clubId;
 
-    if (!eventId) {
-      return errorResponse(res, "Invalid event id", 400);
+    if (!clubId) {
+      return errorResponse(res, "Invalid club id", 400);
     }
 
-    const event = await prisma.event.findUnique({
+    const club = await prisma.club.findUnique({
       where: {
-        id: eventId,
+        id: clubId,
       },
     });
 
-    if (!event) {
-      return errorResponse(res, "Event not found", 404);
+    if (!club) {
+      return errorResponse(res, "Club not found", 404);
     }
 
-    const comments = await prisma.eventComment.findMany({
+    const comments = await prisma.clubComment.findMany({
       where: {
-        eventId,
+        clubId,
       },
       include: {
         user: {
@@ -92,57 +89,61 @@ async function getEventComments(req, res) {
       },
     });
 
-    return successResponse(res, "Event comments fetched successfully", comments, 200);
+    return successResponse(res, "Club comments fetched successfully", comments, 200);
   } catch (error) {
-    console.error("Get event comments error:", error);
+    console.error("Get club comments error:", error);
     return errorResponse(res, "Server error", 500);
   }
 }
 
-async function createEventComment(req, res) {
+async function createClubComment(req, res) {
   try {
-    const eventId = Number(req.params.id);
+    const clubId = req.params.clubId;
     const { content } = req.body;
 
-    if (!eventId) {
-      return errorResponse(res, "Invalid event id", 400);
+    if (!clubId) {
+      return errorResponse(res, "Invalid club id", 400);
     }
 
-    if (!content || !content.trim()) {
+    if (!content || !String(content).trim()) {
       return errorResponse(res, "Comment content is required", 400);
     }
 
-    if (content.trim().length > 500) {
+    if (String(content).trim().length > 500) {
       return errorResponse(res, "Comment content must be less than 500 characters", 400);
     }
 
-    const event = await prisma.event.findUnique({
+    const club = await prisma.club.findUnique({
       where: {
-        id: eventId,
+        id: clubId,
       },
     });
 
-    if (!event) {
-      return errorResponse(res, "Event not found", 404);
+    if (!club) {
+      return errorResponse(res, "Club not found", 404);
     }
 
-    const comment = await prisma.eventComment.create({
+    if (club.status !== "active") {
+      return errorResponse(res, "This club is not open for comments", 400);
+    }
+
+    const comment = await prisma.clubComment.create({
       data: {
-        eventId,
+        clubId,
         userId: req.user.id,
-        content: content.trim(),
+        content: String(content).trim(),
       },
       include: getCommentIncludeFields(),
     });
 
     return successResponse(res, "Comment created successfully", comment, 201);
   } catch (error) {
-    console.error("Create event comment error:", error);
+    console.error("Create club comment error:", error);
     return errorResponse(res, "Server error", 500);
   }
 }
 
-async function deleteEventComment(req, res) {
+async function deleteClubComment(req, res) {
   try {
     const commentId = Number(req.params.commentId);
 
@@ -150,7 +151,7 @@ async function deleteEventComment(req, res) {
       return errorResponse(res, "Invalid comment id", 400);
     }
 
-    const comment = await prisma.eventComment.findUnique({
+    const comment = await prisma.clubComment.findUnique({
       where: {
         id: commentId,
       },
@@ -165,7 +166,7 @@ async function deleteEventComment(req, res) {
       return errorResponse(res, "You do not have permission to delete this comment", 403);
     }
 
-    await prisma.eventComment.delete({
+    await prisma.clubComment.delete({
       where: {
         id: commentId,
       },
@@ -175,14 +176,14 @@ async function deleteEventComment(req, res) {
       id: commentId,
     });
   } catch (error) {
-    console.error("Delete event comment error:", error);
+    console.error("Delete club comment error:", error);
     return errorResponse(res, "Server error", 500);
   }
 }
 
-async function getMyEventComments(req, res) {
+async function getMyClubComments(req, res) {
   try {
-    const comments = await prisma.eventComment.findMany({
+    const comments = await prisma.clubComment.findMany({
       where: {
         userId: req.user.id,
       },
@@ -194,24 +195,22 @@ async function getMyEventComments(req, res) {
 
     return successResponse(res, "My comments fetched successfully", comments, 200);
   } catch (error) {
-    console.error("Get my comments error:", error);
+    console.error("Get my club comments error:", error);
     return errorResponse(res, "Server error", 500);
   }
 }
 
-async function getManagedEventComments(req, res) {
+async function getManagedClubComments(req, res) {
   try {
     const where = {};
 
     if (req.user.role === "club_admin") {
-      where.event = {
-        club: {
-          createdById: req.user.id,
-        },
+      where.club = {
+        createdById: req.user.id,
       };
     }
 
-    const comments = await prisma.eventComment.findMany({
+    const comments = await prisma.clubComment.findMany({
       where,
       include: getCommentIncludeFields(),
       orderBy: {
@@ -221,15 +220,15 @@ async function getManagedEventComments(req, res) {
 
     return successResponse(res, "Managed comments fetched successfully", comments, 200);
   } catch (error) {
-    console.error("Get managed comments error:", error);
+    console.error("Get managed club comments error:", error);
     return errorResponse(res, "Server error", 500);
   }
 }
 
 module.exports = {
-  getEventComments,
-  createEventComment,
-  deleteEventComment,
-  getMyEventComments,
-  getManagedEventComments,
+  getClubComments,
+  createClubComment,
+  deleteClubComment,
+  getMyClubComments,
+  getManagedClubComments,
 };

@@ -1,13 +1,21 @@
 const prisma = require("../config/prisma");
 const { successResponse, errorResponse } = require("../utils/response");
+const { generateUniqueClubId } = require("../utils/id");
 
 function getClubSelectFields() {
   return {
     id: true,
+    sourceId: true,
     name: true,
+    chineseName: true,
+    englishName: true,
     description: true,
+    purpose: true,
+    mission: true,
     category: true,
     logo: true,
+    joinInfo: true,
+    reviewer: true,
     status: true,
     createdById: true,
     createdBy: {
@@ -22,6 +30,9 @@ function getClubSelectFields() {
       select: {
         members: true,
         applications: true,
+        events: true,
+        announcements: true,
+        galleryImages: true,
       },
     },
     createdAt: true,
@@ -50,6 +61,23 @@ function canManageClub(user, club) {
   return false;
 }
 
+function normalizeOptionalString(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const trimmed = String(value).trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function buildClubName({ name, chineseName, englishName }) {
+  const normalizedName = normalizeOptionalString(name);
+  const normalizedEnglishName = normalizeOptionalString(englishName);
+  const normalizedChineseName = normalizeOptionalString(chineseName);
+
+  return normalizedEnglishName || normalizedName || normalizedChineseName;
+}
+
 async function getAllClubs(req, res) {
   try {
     const { keyword, category, status } = req.query;
@@ -64,7 +92,27 @@ async function getAllClubs(req, res) {
           },
         },
         {
+          englishName: {
+            contains: keyword,
+          },
+        },
+        {
+          chineseName: {
+            contains: keyword,
+          },
+        },
+        {
           description: {
+            contains: keyword,
+          },
+        },
+        {
+          purpose: {
+            contains: keyword,
+          },
+        },
+        {
+          mission: {
             contains: keyword,
           },
         },
@@ -98,7 +146,7 @@ async function getAllClubs(req, res) {
 
 async function getClubById(req, res) {
   try {
-    const clubId = Number(req.params.id);
+    const clubId = req.params.id;
 
     if (!clubId) {
       return errorResponse(res, "Invalid club id", 400);
@@ -124,17 +172,44 @@ async function getClubById(req, res) {
 
 async function createClub(req, res) {
   try {
-    const { name, description, category } = req.body;
+    const {
+      sourceId,
+      name,
+      chineseName,
+      englishName,
+      description,
+      purpose,
+      mission,
+      category,
+      joinInfo,
+      reviewer,
+    } = req.body;
 
-    if (!name || !name.trim()) {
-      return errorResponse(res, "Club name is required", 400);
+    const finalName = buildClubName({
+      name,
+      chineseName,
+      englishName,
+    });
+
+    if (!finalName) {
+      return errorResponse(res, "Club name, English name, or Chinese name is required", 400);
     }
+
+    const clubId = await generateUniqueClubId(prisma);
 
     const club = await prisma.club.create({
       data: {
-        name: name.trim(),
-        description: description || null,
-        category: category || null,
+        id: clubId,
+        sourceId: sourceId !== undefined && sourceId !== null && sourceId !== "" ? Number(sourceId) : null,
+        name: finalName,
+        chineseName: normalizeOptionalString(chineseName),
+        englishName: normalizeOptionalString(englishName) || finalName,
+        description: normalizeOptionalString(description),
+        purpose: normalizeOptionalString(purpose),
+        mission: normalizeOptionalString(mission),
+        category: normalizeOptionalString(category),
+        joinInfo: normalizeOptionalString(joinInfo),
+        reviewer: normalizeOptionalString(reviewer),
         status: "active",
         createdById: req.user.id,
       },
@@ -163,7 +238,7 @@ async function createClub(req, res) {
     console.error("Create club error:", error);
 
     if (error.code === "P2002") {
-      return errorResponse(res, "Club name already exists", 409);
+      return errorResponse(res, "Club name or source ID already exists", 409);
     }
 
     return errorResponse(res, "Server error", 500);
@@ -172,7 +247,7 @@ async function createClub(req, res) {
 
 async function updateClubById(req, res) {
   try {
-    const clubId = Number(req.params.id);
+    const clubId = req.params.id;
 
     if (!clubId) {
       return errorResponse(res, "Invalid club id", 400);
@@ -192,16 +267,79 @@ async function updateClubById(req, res) {
       return errorResponse(res, "You do not have permission to manage this club", 403);
     }
 
-    const { name, description, category, status } = req.body;
+    const {
+      sourceId,
+      name,
+      chineseName,
+      englishName,
+      description,
+      purpose,
+      mission,
+      category,
+      joinInfo,
+      reviewer,
+      status,
+    } = req.body;
+
+    const hasNameUpdate =
+      name !== undefined || chineseName !== undefined || englishName !== undefined;
+
+    const finalName = hasNameUpdate
+      ? buildClubName({
+          name: name !== undefined ? name : existingClub.name,
+          chineseName: chineseName !== undefined ? chineseName : existingClub.chineseName,
+          englishName: englishName !== undefined ? englishName : existingClub.englishName,
+        })
+      : existingClub.name;
+
+    if (!finalName) {
+      return errorResponse(res, "Club name, English name, or Chinese name is required", 400);
+    }
 
     const updatedClub = await prisma.club.update({
       where: {
         id: clubId,
       },
       data: {
-        name: name !== undefined ? name.trim() : existingClub.name,
-        description: description !== undefined ? description : existingClub.description,
-        category: category !== undefined ? category : existingClub.category,
+        sourceId:
+          sourceId !== undefined
+            ? sourceId !== null && sourceId !== ""
+              ? Number(sourceId)
+              : null
+            : existingClub.sourceId,
+        name: finalName,
+        chineseName:
+          chineseName !== undefined
+            ? normalizeOptionalString(chineseName)
+            : existingClub.chineseName,
+        englishName:
+          englishName !== undefined
+            ? normalizeOptionalString(englishName) || finalName
+            : existingClub.englishName,
+        description:
+          description !== undefined
+            ? normalizeOptionalString(description)
+            : existingClub.description,
+        purpose:
+          purpose !== undefined
+            ? normalizeOptionalString(purpose)
+            : existingClub.purpose,
+        mission:
+          mission !== undefined
+            ? normalizeOptionalString(mission)
+            : existingClub.mission,
+        category:
+          category !== undefined
+            ? normalizeOptionalString(category)
+            : existingClub.category,
+        joinInfo:
+          joinInfo !== undefined
+            ? normalizeOptionalString(joinInfo)
+            : existingClub.joinInfo,
+        reviewer:
+          reviewer !== undefined
+            ? normalizeOptionalString(reviewer)
+            : existingClub.reviewer,
         status: status !== undefined ? status : existingClub.status,
       },
       select: getClubSelectFields(),
@@ -212,7 +350,7 @@ async function updateClubById(req, res) {
     console.error("Update club error:", error);
 
     if (error.code === "P2002") {
-      return errorResponse(res, "Club name already exists", 409);
+      return errorResponse(res, "Club name or source ID already exists", 409);
     }
 
     return errorResponse(res, "Server error", 500);
@@ -221,7 +359,7 @@ async function updateClubById(req, res) {
 
 async function deleteClubById(req, res) {
   try {
-    const clubId = Number(req.params.id);
+    const clubId = req.params.id;
 
     if (!clubId) {
       return errorResponse(res, "Invalid club id", 400);
@@ -258,7 +396,7 @@ async function deleteClubById(req, res) {
 
 async function uploadClubLogoById(req, res) {
   try {
-    const clubId = Number(req.params.id);
+    const clubId = req.params.id;
 
     if (!clubId) {
       return errorResponse(res, "Invalid club id", 400);
@@ -303,14 +441,14 @@ async function uploadClubLogoById(req, res) {
 
 async function applyToClub(req, res) {
   try {
-    const clubId = Number(req.params.id);
+    const clubId = req.params.id;
     const { reason } = req.body;
 
     if (!clubId) {
       return errorResponse(res, "Invalid club id", 400);
     }
 
-    if (!reason || !reason.trim()) {
+    if (!reason || !String(reason).trim()) {
       return errorResponse(res, "Application reason is required", 400);
     }
 
@@ -366,7 +504,7 @@ async function applyToClub(req, res) {
         },
       },
       update: {
-        reason: reason.trim(),
+        reason: String(reason).trim(),
         status: "pending",
         reviewedById: null,
         reviewedAt: null,
@@ -374,7 +512,7 @@ async function applyToClub(req, res) {
       create: {
         clubId,
         userId: req.user.id,
-        reason: reason.trim(),
+        reason: String(reason).trim(),
         status: "pending",
       },
       include: {
@@ -382,6 +520,8 @@ async function applyToClub(req, res) {
           select: {
             id: true,
             name: true,
+            chineseName: true,
+            englishName: true,
             category: true,
             logo: true,
           },
@@ -401,7 +541,7 @@ async function applyToClub(req, res) {
 
 async function getClubApplications(req, res) {
   try {
-    const clubId = Number(req.params.id);
+    const clubId = req.params.id;
 
     if (!clubId) {
       return errorResponse(res, "Invalid club id", 400);
@@ -452,7 +592,7 @@ async function getClubApplications(req, res) {
 
 async function approveClubApplication(req, res) {
   try {
-    const clubId = Number(req.params.clubId);
+    const clubId = req.params.clubId;
     const applicationId = Number(req.params.applicationId);
 
     if (!clubId || !applicationId) {
@@ -502,6 +642,8 @@ async function approveClubApplication(req, res) {
             select: {
               id: true,
               name: true,
+              chineseName: true,
+              englishName: true,
             },
           },
           reviewedBy: {
@@ -544,7 +686,7 @@ async function approveClubApplication(req, res) {
 
 async function rejectClubApplication(req, res) {
   try {
-    const clubId = Number(req.params.clubId);
+    const clubId = req.params.clubId;
     const applicationId = Number(req.params.applicationId);
 
     if (!clubId || !applicationId) {
@@ -593,6 +735,8 @@ async function rejectClubApplication(req, res) {
           select: {
             id: true,
             name: true,
+            chineseName: true,
+            englishName: true,
           },
         },
         reviewedBy: {
@@ -615,7 +759,7 @@ async function rejectClubApplication(req, res) {
 
 async function getClubMembers(req, res) {
   try {
-    const clubId = Number(req.params.id);
+    const clubId = req.params.id;
 
     if (!clubId) {
       return errorResponse(res, "Invalid club id", 400);
@@ -654,7 +798,7 @@ async function getClubMembers(req, res) {
 
 async function removeClubMember(req, res) {
   try {
-    const clubId = Number(req.params.clubId);
+    const clubId = req.params.clubId;
     const userId = Number(req.params.userId);
 
     if (!clubId || !userId) {
@@ -718,6 +862,8 @@ async function getMyClubApplications(req, res) {
           select: {
             id: true,
             name: true,
+            chineseName: true,
+            englishName: true,
             description: true,
             category: true,
             logo: true,

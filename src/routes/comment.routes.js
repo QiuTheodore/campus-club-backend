@@ -2,29 +2,29 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  getEventComments,
-  createEventComment,
-  deleteEventComment,
-  getMyEventComments,
-  getManagedEventComments,
+  getClubComments,
+  createClubComment,
+  deleteClubComment,
+  getMyClubComments,
+  getManagedClubComments,
 } = require("../controllers/comment.controller");
 
 const { authenticate } = require("../middleware/auth.middleware");
 const { requireRoles } = require("../middleware/role.middleware");
 
-router.get("/events/:id/comments", getEventComments);
+router.get("/clubs/:clubId/comments", getClubComments);
 
-router.post("/events/:id/comments", authenticate, createEventComment);
+router.post("/clubs/:clubId/comments", authenticate, createClubComment);
 
-router.delete("/comments/:commentId", authenticate, deleteEventComment);
+router.delete("/comments/:commentId", authenticate, deleteClubComment);
 
-router.get("/users/me/comments", authenticate, getMyEventComments);
+router.get("/users/me/comments", authenticate, getMyClubComments);
 
 router.get(
   "/manage/comments",
   authenticate,
   requireRoles("club_admin", "super_admin"),
-  getManagedEventComments
+  getManagedClubComments
 );
 
 module.exports = router;

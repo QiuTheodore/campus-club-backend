@@ -21,6 +21,8 @@ function getGalleryIncludeFields() {
       select: {
         id: true,
         name: true,
+        chineseName: true,
+        englishName: true,
         category: true,
         logo: true,
         status: true,
@@ -40,7 +42,7 @@ function getGalleryIncludeFields() {
 
 async function getClubGallery(req, res) {
   try {
-    const clubId = Number(req.params.clubId);
+    const clubId = req.params.clubId;
 
     if (!clubId) {
       return errorResponse(res, "Invalid club id", 400);
@@ -75,7 +77,7 @@ async function getClubGallery(req, res) {
 
 async function uploadClubGalleryImage(req, res) {
   try {
-    const clubId = Number(req.params.clubId);
+    const clubId = req.params.clubId;
     const { title, description } = req.body;
 
     if (!clubId) {

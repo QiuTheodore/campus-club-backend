@@ -16,6 +16,8 @@ function getAnnouncementIncludeFields() {
       select: {
         id: true,
         name: true,
+        chineseName: true,
+        englishName: true,
         description: true,
         category: true,
         logo: true,
@@ -56,7 +58,7 @@ async function getAllAnnouncements(req, res) {
     }
 
     if (clubId) {
-      where.clubId = Number(clubId);
+      where.clubId = String(clubId);
     }
 
     if (status) {
@@ -127,7 +129,7 @@ async function getAnnouncementById(req, res) {
 
 async function getClubAnnouncements(req, res) {
   try {
-    const clubId = Number(req.params.clubId);
+    const clubId = req.params.clubId;
 
     if (!clubId) {
       return errorResponse(res, "Invalid club id", 400);
@@ -173,18 +175,18 @@ async function getClubAnnouncements(req, res) {
 
 async function createAnnouncementForClub(req, res) {
   try {
-    const clubId = Number(req.params.clubId);
+    const clubId = req.params.clubId;
     const { title, content, status, isPinned } = req.body;
 
     if (!clubId) {
       return errorResponse(res, "Invalid club id", 400);
     }
 
-    if (!title || !title.trim()) {
+    if (!title || !String(title).trim()) {
       return errorResponse(res, "Announcement title is required", 400);
     }
 
-    if (!content || !content.trim()) {
+    if (!content || !String(content).trim()) {
       return errorResponse(res, "Announcement content is required", 400);
     }
 
@@ -220,8 +222,8 @@ async function createAnnouncementForClub(req, res) {
       data: {
         clubId,
         createdById: req.user.id,
-        title: title.trim(),
-        content: content.trim(),
+        title: String(title).trim(),
+        content: String(content).trim(),
         status: finalStatus,
         isPinned: Boolean(isPinned),
       },
@@ -285,9 +287,9 @@ async function updateAnnouncementById(req, res) {
       },
       data: {
         title:
-          title !== undefined ? title.trim() : existingAnnouncement.title,
+          title !== undefined ? String(title).trim() : existingAnnouncement.title,
         content:
-          content !== undefined ? content.trim() : existingAnnouncement.content,
+          content !== undefined ? String(content).trim() : existingAnnouncement.content,
         status:
           status !== undefined ? status : existingAnnouncement.status,
         isPinned:

@@ -21,6 +21,8 @@ function getEventIncludeFields() {
       select: {
         id: true,
         name: true,
+        chineseName: true,
+        englishName: true,
         description: true,
         category: true,
         logo: true,
@@ -95,7 +97,7 @@ async function getAllEvents(req, res) {
     }
 
     if (clubId) {
-      where.clubId = Number(clubId);
+      where.clubId = String(clubId);
     }
 
     if (status) {
@@ -178,14 +180,14 @@ async function getEventById(req, res) {
 
 async function createEventForClub(req, res) {
   try {
-    const clubId = Number(req.params.clubId);
+    const clubId = req.params.clubId;
     const { title, description, location, startTime, endTime, capacity, status } = req.body;
 
     if (!clubId) {
       return errorResponse(res, "Invalid club id", 400);
     }
 
-    if (!title || !title.trim()) {
+    if (!title || !String(title).trim()) {
       return errorResponse(res, "Event title is required", 400);
     }
 
@@ -230,7 +232,7 @@ async function createEventForClub(req, res) {
     const event = await prisma.event.create({
       data: {
         clubId,
-        title: title.trim(),
+        title: String(title).trim(),
         description: description || null,
         location: location || null,
         startTime: parsedStartTime,
@@ -314,7 +316,7 @@ async function updateEventById(req, res) {
         id: eventId,
       },
       data: {
-        title: title !== undefined ? title.trim() : existingEvent.title,
+        title: title !== undefined ? String(title).trim() : existingEvent.title,
         description: description !== undefined ? description : existingEvent.description,
         location: location !== undefined ? location : existingEvent.location,
         startTime: parsedStartTime,
@@ -494,6 +496,8 @@ async function signupEvent(req, res) {
               select: {
                 id: true,
                 name: true,
+                chineseName: true,
+                englishName: true,
                 category: true,
                 logo: true,
               },
@@ -637,6 +641,8 @@ async function getEventSignupCount(req, res) {
           select: {
             id: true,
             name: true,
+            chineseName: true,
+            englishName: true,
           },
         },
       },
@@ -685,6 +691,8 @@ async function getMyEventSignups(req, res) {
               select: {
                 id: true,
                 name: true,
+                chineseName: true,
+                englishName: true,
                 category: true,
                 logo: true,
               },
