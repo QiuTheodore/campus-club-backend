@@ -28,6 +28,7 @@ model User {
   eventSignups          EventSignup[]
   eventComments         EventComment[]
   createdAnnouncements  Announcement[]    @relation("AnnouncementCreator")
+  uploadedGalleryImages ClubGalleryImage[] @relation("GalleryUploader")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -49,6 +50,7 @@ model Club {
   members       ClubMember[]
   events        Event[]
   announcements Announcement[]
+  galleryImages ClubGalleryImage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -157,4 +159,21 @@ model Announcement {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ClubGalleryImage {
+  id           Int      @id @default(autoincrement())
+
+  clubId       Int
+  uploadedById Int?
+
+  imageUrl     String
+  title        String?
+  description  String?
+
+  club         Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  uploadedBy   User?    @relation("GalleryUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

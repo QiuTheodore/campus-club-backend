@@ -5,6 +5,7 @@ const fs = require("fs");
 const avatarDir = path.join(__dirname, "..", "..", "uploads", "avatars");
 const clubLogoDir = path.join(__dirname, "..", "..", "uploads", "clubs");
 const eventPosterDir = path.join(__dirname, "..", "..", "uploads", "events");
+const galleryDir = path.join(__dirname, "..", "..", "uploads", "gallery");
 
 function ensureDirExists(dir) {
   if (!fs.existsSync(dir)) {
@@ -15,6 +16,7 @@ function ensureDirExists(dir) {
 ensureDirExists(avatarDir);
 ensureDirExists(clubLogoDir);
 ensureDirExists(eventPosterDir);
+ensureDirExists(galleryDir);
 
 function imageFileFilter(req, file, cb) {
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
@@ -63,8 +65,17 @@ const uploadEventPoster = multer({
   },
 });
 
+const uploadGalleryImage = multer({
+  storage: createStorage(galleryDir, "gallery"),
+  fileFilter: imageFileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+});
+
 module.exports = {
   uploadAvatar,
   uploadClubLogo,
   uploadEventPoster,
+  uploadGalleryImage,
 };

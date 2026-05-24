@@ -10,6 +10,7 @@ const clubRoutes = require("./routes/club.routes");
 const eventRoutes = require("./routes/event.routes");
 const announcementRoutes = require("./routes/announcement.routes");
 const commentRoutes = require("./routes/comment.routes");
+const galleryRoutes = require("./routes/gallery.routes");
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/clubs", clubRoutes);
 app.use("/api", eventRoutes);
 app.use("/api", announcementRoutes);
 app.use("/api", commentRoutes);
+app.use("/api", galleryRoutes);
 
 // 404 route
 app.use((req, res) => {
@@ -61,7 +63,7 @@ app.use((err, req, res, next) => {
   if (err.code === "LIMIT_FILE_SIZE") {
     return res.status(400).json({
       success: false,
-      message: "File size must be less than 2MB",
+      message: "File size is too large",
     });
   }
 

@@ -1,178 +1,412 @@
-````md
-# Campus Club Backend - 简洁接口说明
 
-后端技术栈：Node.js + Express + Prisma + SQLite + JWT + Multer  
-功能：用户管理、角色权限、社团管理、社团申请、活动管理、活动报名、公告管理、评论管理、文件上传。
+````md
+# Campus Club Backend
+
+Campus Club Backend is a Node.js backend project for a campus club management system.  
+It provides APIs for user authentication, role-based access control, club management, club applications, event registration, announcements, comments, file uploads, and club gallery images.
 
 ---
 
-## 1. 启动项目
+## Tech Stack
+
+- Node.js
+- Express
+- Prisma
+- SQLite
+- JWT
+- bcrypt
+- multer
+- cors
+- dotenv
+- nodemon
+
+---
+
+## Main Features
+
+### User & Authentication
+
+- Register with `@wku.edu.cn` email only
+- Login with email and password
+- Password encryption with bcrypt
+- JWT-based authentication
+- User profile update
+- Avatar upload
+
+### Role System
+
+The system supports three roles:
+
+| Role | Description |
+|---|---|
+| `student` | Normal student user |
+| `club_admin` | Club administrator |
+| `super_admin` | System administrator |
+
+### Club Management
+
+- Create, update, delete clubs
+- Upload club logo
+- View club list and club details
+- Club gallery image upload
+- Gallery image title and description
+
+### Club Application
+
+- Students can apply to join a club
+- Application must include a reason
+- Club admin can approve or reject applications
+- Approved users become club members
+
+### Event Management
+
+- Club admin can publish events
+- Event supports title, description, location, time, capacity, and poster
+- Students can sign up for events after joining the club
+- Club admin can view signup count and signup list
+
+### Announcement
+
+- Club admin can publish announcements
+- Announcements support title, content, status, and pinned state
+- Club admin can manage announcements under their own clubs
+
+### Comments
+
+- Logged-in users can comment on events
+- Users can delete their own comments
+- Club admin can delete comments under their own club events
+- Super admin can delete any comment
+
+### File Upload
+
+Supported uploads:
+
+| Feature | Folder |
+|---|---|
+| User avatar | `uploads/avatars` |
+| Club logo | `uploads/clubs` |
+| Event poster | `uploads/events` |
+| Club gallery image | `uploads/gallery` |
+
+Supported image types:
+
+```txt
+jpg, jpeg, png, webp
+````
+
+---
+
+## Project Structure
+
+```txt
+campus-club-backend
+│
+├── prisma
+│   ├── schema.prisma
+│   ├── seed.js
+│   └── migrations
+│
+├── src
+│   ├── app.js
+│   ├── server.js
+│   │
+│   ├── config
+│   │   └── prisma.js
+│   │
+│   ├── controllers
+│   │   ├── auth.controller.js
+│   │   ├── user.controller.js
+│   │   ├── admin.controller.js
+│   │   ├── club.controller.js
+│   │   ├── event.controller.js
+│   │   ├── announcement.controller.js
+│   │   ├── comment.controller.js
+│   │   └── gallery.controller.js
+│   │
+│   ├── routes
+│   │   ├── auth.routes.js
+│   │   ├── user.routes.js
+│   │   ├── admin.routes.js
+│   │   ├── club.routes.js
+│   │   ├── event.routes.js
+│   │   ├── announcement.routes.js
+│   │   ├── comment.routes.js
+│   │   └── gallery.routes.js
+│   │
+│   ├── middleware
+│   │   ├── auth.middleware.js
+│   │   ├── role.middleware.js
+│   │   └── upload.middleware.js
+│   │
+│   └── utils
+│       ├── password.js
+│       ├── response.js
+│       └── token.js
+│
+├── uploads
+│   ├── avatars
+│   ├── clubs
+│   ├── events
+│   └── gallery
+│
+├── .env.example
+├── .gitignore
+├── package.json
+├── README.md
+└── API_DOCS.md
+```
+
+---
+
+## Environment Variables
+
+Create a `.env` file in the project root.
+
+```env
+PORT=3000
+DATABASE_URL="file:./dev.db"
+JWT_SECRET="campus_club_backend_secret_2026"
+JWT_EXPIRES_IN="7d"
+```
+
+---
+
+## Installation
 
 ```bash
 npm install
+```
+
+If dependencies are missing, install them manually:
+
+```bash
+npm install express cors dotenv bcrypt multer jsonwebtoken
+npm install prisma @prisma/client
+npm install nodemon --save-dev
+```
+
+---
+
+## Database Setup
+
+Run Prisma migration:
+
+```bash
 npx prisma migrate dev
+```
+
+Generate Prisma Client:
+
+```bash
 npx prisma generate
+```
+
+Seed demo users:
+
+```bash
 node prisma/seed.js
+```
+
+---
+
+## Run the Server
+
+Development mode:
+
+```bash
 npm run dev
-````
-
-服务器：`http://localhost:3000`
-
----
-
-## 2. 用户角色
-
-| 角色          | 权限                          |
-| ----------- | --------------------------- |
-| student     | 注册、登录、编辑个人信息、申请社团、报名活动、评论活动 |
-| club_admin  | 管理自己社团、审核申请、发布活动、公告         |
-| super_admin | 管理所有用户、社团、活动、评论、公告          |
-
----
-
-## 3. 认证
-
-* 登录 / 注册返回 token
-* 前端存储 token（localStorage 或 Vuex/Redux）
-* 请求需要权限的接口时在 Header 中加：
-
-```
-Authorization: Bearer <TOKEN>
 ```
 
-用户界面不显示 token。
+Production mode:
 
----
-
-## 4. 主要模块接口
-
-### 用户 User
-
-| 方法   | 接口                              | Auth        | 说明     |
-| ---- | ------------------------------- | ----------- | ------ |
-| GET  | /api/users/me                   | ✅           | 获取当前用户 |
-| PUT  | /api/users/me                   | ✅           | 修改当前用户 |
-| POST | /api/users/me/avatar            | ✅           | 上传头像   |
-| GET  | /api/users/me/club-applications | ✅           | 我的社团申请 |
-| GET  | /api/users/me/clubs             | ✅           | 我加入的社团 |
-| GET  | /api/users/me/event-signups     | ✅           | 我的活动报名 |
-| GET  | /api/users/me/comments          | ✅           | 我的评论   |
-| GET  | /api/users                      | super_admin | 所有用户   |
-| GET  | /api/users/:id                  | ✅           | 用户详情   |
-| PUT  | /api/users/:id                  | ✅           | 修改用户   |
-| POST | /api/users/:id/avatar           | ✅           | 上传用户头像 |
-
-### 管理 Admin
-
-| 方法     | 接口                        | Auth        | 说明   |
-| ------ | ------------------------- | ----------- | ---- |
-| GET    | /api/admin/users          | super_admin | 所有用户 |
-| GET    | /api/admin/users/:id      | super_admin | 查看用户 |
-| PUT    | /api/admin/users/:id/role | super_admin | 修改角色 |
-| DELETE | /api/admin/users/:id      | super_admin | 删除用户 |
-
-### 社团 Club
-
-| 方法     | 接口                                                     | Auth                     | 说明        |
-| ------ | ------------------------------------------------------ | ------------------------ | --------- |
-| GET    | /api/clubs                                             | ❌                        | 所有社团      |
-| GET    | /api/clubs/:id                                         | ❌                        | 社团详情      |
-| POST   | /api/clubs                                             | club_admin / super_admin | 创建社团      |
-| PUT    | /api/clubs/:id                                         | club_admin / super_admin | 修改社团      |
-| DELETE | /api/clubs/:id                                         | club_admin / super_admin | 删除社团      |
-| POST   | /api/clubs/:id/logo                                    | club_admin / super_admin | 上传社团 Logo |
-| POST   | /api/clubs/:id/apply                                   | ✅                        | 申请加入社团    |
-| GET    | /api/clubs/:id/applications                            | club_admin / super_admin | 查看申请      |
-| PUT    | /api/clubs/:clubId/applications/:applicationId/approve | club_admin / super_admin | 批准申请      |
-| PUT    | /api/clubs/:clubId/applications/:applicationId/reject  | club_admin / super_admin | 拒绝申请      |
-| GET    | /api/clubs/:id/members                                 | ✅                        | 社团成员列表    |
-| DELETE | /api/clubs/:clubId/members/:userId                     | club_admin / super_admin | 移除成员      |
-
-### 活动 Event
-
-| 方法     | 接口                           | Auth                     | 说明            |
-| ------ | ---------------------------- | ------------------------ | ------------- |
-| GET    | /api/events                  | ❌                        | 活动列表          |
-| GET    | /api/events/:id              | ❌                        | 活动详情          |
-| GET    | /api/events/:id/signup-count | ❌                        | 活动报名人数        |
-| POST   | /api/clubs/:clubId/events    | club_admin / super_admin | 发布活动（文字 + 海报） |
-| PUT    | /api/events/:id              | club_admin / super_admin | 修改活动          |
-| DELETE | /api/events/:id              | club_admin / super_admin | 删除活动          |
-| POST   | /api/events/:id/poster       | club_admin / super_admin | 上传活动海报        |
-| POST   | /api/events/:id/signup       | ✅                        | 学生报名活动        |
-| DELETE | /api/events/:id/signup       | ✅                        | 取消报名          |
-| GET    | /api/events/:id/signups      | club_admin / super_admin | 活动报名名单        |
-
-### 公告 Announcement
-
-| 方法     | 接口                               | Auth                     | 说明             |
-| ------ | -------------------------------- | ------------------------ | -------------- |
-| GET    | /api/announcements               | ❌                        | 公告列表           |
-| GET    | /api/announcements/:id           | ❌                        | 公告详情           |
-| GET    | /api/clubs/:clubId/announcements | ❌                        | 社团公告           |
-| POST   | /api/clubs/:clubId/announcements | club_admin / super_admin | 发布公告（文字，可扩展图片） |
-| PUT    | /api/announcements/:id           | club_admin / super_admin | 修改公告           |
-| DELETE | /api/announcements/:id           | club_admin / super_admin | 删除公告           |
-| GET    | /api/manage/announcements        | club_admin / super_admin | 管理可管理公告        |
-
-### 评论 Comment
-
-| 方法     | 接口                       | Auth                     | 说明                   |
-| ------ | ------------------------ | ------------------------ | -------------------- |
-| GET    | /api/events/:id/comments | ❌                        | 活动评论列表               |
-| POST   | /api/events/:id/comments | ✅                        | 发布评论（文字，可扩展图片）       |
-| DELETE | /api/comments/:commentId | ✅                        | 删除评论（自己/社团管理员/超级管理员） |
-| GET    | /api/users/me/comments   | ✅                        | 我的评论                 |
-| GET    | /api/manage/comments     | club_admin / super_admin | 管理可管理评论              |
-
----
-
-## 5. 文件上传规则
-
-* 用户头像：`/api/users/me/avatar` → FormData field: `avatar`
-* 活动海报：`/api/events/:id/poster` → FormData field: `poster`
-* 社团 Logo：`/api/clubs/:id/logo` → FormData field: `logo`
-* 最大 2MB，支持 jpg/png/webp
-* 上传成功返回 URL → 前端直接显示
-
----
-
-## 6. 前端使用建议
-
-* 登录 / 注册获取 token → 前端保存
-* 需要权限的接口自动在 Header 加：
-
-```
-Authorization: Bearer <TOKEN>
+```bash
+npm start
 ```
 
-* 文件上传接口用 `FormData`
-* 其他接口直接用 JSON 请求/返回数据
+Default server URL:
 
+```txt
+http://localhost:3000
+```
 
----
+Health check:
 
-## 7. Demo 流程
-
-1. Super Admin 登录 → 提升 club_admin
-2. Club Admin 创建社团 → 发布活动 + 公告
-3. 学生申请加入社团 → 审核通过 → 报名活动
-4. 学生评论活动
-5. Club Admin / Super Admin 管理公告和评论
+```txt
+GET http://localhost:3000/api/health
+```
 
 ---
 
-## 8. 总结功能
+## Demo Accounts
 
-* 用户管理、注册登录、头像上传
-* 角色权限控制（student / club_admin / super_admin）
-* 社团创建、修改、申请加入、成员管理
-* 活动发布、修改、报名、海报上传
-* 公告发布、修改、删除
-* 活动评论、删除
-* 文件上传与展示
+After running `node prisma/seed.js`, the following accounts are available:
 
+| Email                  | Password | Role                 |
+| ---------------------- | -------- | -------------------- |
+| `super@wku.edu.cn`     | `123456` | `super_admin`        |
+| `clubadmin@wku.edu.cn` | `123456` | `student` by default |
+| `student1@wku.edu.cn`  | `123456` | `student`            |
+| `student2@wku.edu.cn`  | `123456` | `student`            |
+
+The `super_admin` can promote `clubadmin@wku.edu.cn` to `club_admin`.
 
 ---
 
-**接口总数**：50+（包含测试接口）
+## Authentication
+
+This project uses Bearer token authentication.
+
+After login or register, the backend returns a JWT token:
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "token": "JWT_TOKEN",
+    "user": {
+      "id": 1,
+      "email": "super@wku.edu.cn",
+      "role": "super_admin"
+    }
+  }
+}
+```
+
+For protected APIs, include the token in the request header:
+
+```txt
+Authorization: Bearer JWT_TOKEN
+```
+
+---
+
+## API Documentation
+
+Detailed request and response parameters are documented separately.
+
+Please see:
+
+```txt
+API_DOCS.md
+```
+
+or the JSON version:
+
+```txt
+campus_club_api_docs.json
+```
+
+The API documentation includes:
+
+* endpoint path
+* HTTP method
+* authentication requirement
+* path parameters
+* query parameters
+* request body
+* FormData fields
+* response examples
+* role permissions
+
+---
+
+## Recommended Demo Flow
+
+1. Login as `super_admin`
+2. Promote `clubadmin@wku.edu.cn` to `club_admin`
+3. Login as `club_admin`
+4. Create a club
+5. Upload club logo
+6. Upload club gallery images
+7. Login as `student1` and `student2`
+8. Students apply to join the club with reasons
+9. Club admin approves applications
+10. Club admin creates an event
+11. Club admin uploads event poster
+12. Approved students sign up for the event
+13. Club admin checks signup count and signup list
+14. Club admin publishes announcement
+15. Users comment on the event
+
+---
+
+## Notes for Frontend
+
+During local development:
+
+```txt
+Backend: http://localhost:3000
+```
+
+If frontend and backend run on the same computer, use:
+
+```txt
+http://localhost:3000
+```
+
+If frontend runs on another computer in the same network, use the backend computer's LAN IP:
+
+```txt
+http://<backend-computer-ip>:3000
+```
+
+Example:
+
+```txt
+http://192.168.1.25:3000
+```
+
+---
+
+## GitHub Notes
+
+Do not upload these files or folders:
+
+```txt
+node_modules
+.env
+uploads
+prisma/dev.db
+prisma/dev.db-journal
+```
+
+They should be included in `.gitignore`.
+
+Recommended `.gitignore`:
+
+```txt
+node_modules
+.env
+uploads
+prisma/dev.db
+prisma/dev.db-journal
+.DS_Store
+```
+
+---
+
+## Current Status
+
+The backend currently supports:
+
+* User registration and login
+* JWT authentication
+* Role-based access control
+* Super admin user management
+* Club management
+* Club application review
+* Club member management
+* Event publishing
+* Event signup
+* Event signup count and list
+* Announcement management
+* Event comments
+* Club gallery
+* Image uploads
+
+This backend is ready for frontend integration and project demo.
+
+```
+```
