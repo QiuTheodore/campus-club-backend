@@ -145,7 +145,7 @@ async function createClubComment(req, res) {
 
 async function deleteClubComment(req, res) {
   try {
-    const commentId = Number(req.params.commentId);
+    const commentId = req.params.commentId;
 
     if (!commentId) {
       return errorResponse(res, "Invalid comment id", 400);

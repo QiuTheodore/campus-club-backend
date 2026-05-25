@@ -78,21 +78,9 @@ async function getAllEvents(req, res) {
 
     if (keyword) {
       where.OR = [
-        {
-          title: {
-            contains: keyword,
-          },
-        },
-        {
-          description: {
-            contains: keyword,
-          },
-        },
-        {
-          location: {
-            contains: keyword,
-          },
-        },
+        { title: { contains: keyword } },
+        { description: { contains: keyword } },
+        { location: { contains: keyword } },
       ];
     }
 
@@ -139,7 +127,7 @@ async function getAllEvents(req, res) {
 
 async function getEventById(req, res) {
   try {
-    const eventId = Number(req.params.id);
+    const eventId = req.params.id;
 
     if (!eventId) {
       return errorResponse(res, "Invalid event id", 400);
@@ -252,7 +240,7 @@ async function createEventForClub(req, res) {
 
 async function updateEventById(req, res) {
   try {
-    const eventId = Number(req.params.id);
+    const eventId = req.params.id;
 
     if (!eventId) {
       return errorResponse(res, "Invalid event id", 400);
@@ -336,7 +324,7 @@ async function updateEventById(req, res) {
 
 async function deleteEventById(req, res) {
   try {
-    const eventId = Number(req.params.id);
+    const eventId = req.params.id;
 
     if (!eventId) {
       return errorResponse(res, "Invalid event id", 400);
@@ -376,7 +364,7 @@ async function deleteEventById(req, res) {
 
 async function uploadEventPosterById(req, res) {
   try {
-    const eventId = Number(req.params.id);
+    const eventId = req.params.id;
 
     if (!eventId) {
       return errorResponse(res, "Invalid event id", 400);
@@ -424,7 +412,7 @@ async function uploadEventPosterById(req, res) {
 
 async function signupEvent(req, res) {
   try {
-    const eventId = Number(req.params.id);
+    const eventId = req.params.id;
 
     if (!eventId) {
       return errorResponse(res, "Invalid event id", 400);
@@ -519,7 +507,7 @@ async function signupEvent(req, res) {
 
 async function cancelEventSignup(req, res) {
   try {
-    const eventId = Number(req.params.id);
+    const eventId = req.params.id;
 
     if (!eventId) {
       return errorResponse(res, "Invalid event id", 400);
@@ -559,7 +547,7 @@ async function cancelEventSignup(req, res) {
 
 async function getEventSignups(req, res) {
   try {
-    const eventId = Number(req.params.id);
+    const eventId = req.params.id;
 
     if (!eventId) {
       return errorResponse(res, "Invalid event id", 400);
@@ -626,7 +614,7 @@ async function getEventSignups(req, res) {
 
 async function getEventSignupCount(req, res) {
   try {
-    const eventId = Number(req.params.id);
+    const eventId = req.params.id;
 
     if (!eventId) {
       return errorResponse(res, "Invalid event id", 400);

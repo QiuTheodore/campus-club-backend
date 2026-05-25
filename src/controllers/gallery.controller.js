@@ -124,7 +124,7 @@ async function uploadClubGalleryImage(req, res) {
 
 async function updateGalleryImage(req, res) {
   try {
-    const imageId = Number(req.params.imageId);
+    const imageId = req.params.imageId;
     const { title, description } = req.body;
 
     if (!imageId) {
@@ -168,7 +168,7 @@ async function updateGalleryImage(req, res) {
 
 async function deleteGalleryImage(req, res) {
   try {
-    const imageId = Number(req.params.imageId);
+    const imageId = req.params.imageId;
 
     if (!imageId) {
       return errorResponse(res, "Invalid image id", 400);

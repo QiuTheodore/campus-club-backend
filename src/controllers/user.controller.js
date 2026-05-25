@@ -17,9 +17,15 @@ function getUserSelectFields() {
   };
 }
 
+function canAccessUser(currentUser, targetUserId) {
+  if (!currentUser) return false;
+  if (currentUser.role === "super_admin") return true;
+  return currentUser.id === targetUserId;
+}
+
 async function getMe(req, res) {
   try {
-    return successResponse(res, "Current user fetched successfully", req.user, 200);
+    return successResponse(res, "User fetched successfully", req.user, 200);
   } catch (error) {
     console.error("Get me error:", error);
     return errorResponse(res, "Server error", 500);
@@ -44,7 +50,7 @@ async function updateMe(req, res) {
       select: getUserSelectFields(),
     });
 
-    return successResponse(res, "Profile updated successfully", updatedUser, 200);
+    return successResponse(res, "User updated successfully", updatedUser, 200);
   } catch (error) {
     console.error("Update me error:", error);
 
@@ -86,7 +92,7 @@ async function getAllUsers(req, res) {
     const users = await prisma.user.findMany({
       select: getUserSelectFields(),
       orderBy: {
-        id: "asc",
+        createdAt: "desc",
       },
     });
 
@@ -99,14 +105,14 @@ async function getAllUsers(req, res) {
 
 async function getUserById(req, res) {
   try {
-    const userId = Number(req.params.id);
+    const userId = req.params.id;
 
     if (!userId) {
       return errorResponse(res, "Invalid user id", 400);
     }
 
-    if (req.user.role !== "super_admin" && req.user.id !== userId) {
-      return errorResponse(res, "You can only view your own profile", 403);
+    if (!canAccessUser(req.user, userId)) {
+      return errorResponse(res, "You do not have permission to view this user", 403);
     }
 
     const user = await prisma.user.findUnique({
@@ -129,17 +135,15 @@ async function getUserById(req, res) {
 
 async function updateUserById(req, res) {
   try {
-    const userId = Number(req.params.id);
+    const userId = req.params.id;
 
     if (!userId) {
       return errorResponse(res, "Invalid user id", 400);
     }
 
-    if (req.user.role !== "super_admin" && req.user.id !== userId) {
-      return errorResponse(res, "You can only update your own profile", 403);
+    if (!canAccessUser(req.user, userId)) {
+      return errorResponse(res, "You do not have permission to update this user", 403);
     }
-
-    const { name, studentId, major, grade, bio } = req.body;
 
     const existingUser = await prisma.user.findUnique({
       where: {
@@ -150,6 +154,8 @@ async function updateUserById(req, res) {
     if (!existingUser) {
       return errorResponse(res, "User not found", 404);
     }
+
+    const { name, studentId, major, grade, bio } = req.body;
 
     const updatedUser = await prisma.user.update({
       where: {
@@ -167,7 +173,7 @@ async function updateUserById(req, res) {
 
     return successResponse(res, "User updated successfully", updatedUser, 200);
   } catch (error) {
-    console.error("Update user error:", error);
+    console.error("Update user by id error:", error);
 
     if (error.code === "P2002") {
       return errorResponse(res, "Student ID already exists", 409);
@@ -179,14 +185,14 @@ async function updateUserById(req, res) {
 
 async function uploadUserAvatar(req, res) {
   try {
-    const userId = Number(req.params.id);
+    const userId = req.params.id;
 
     if (!userId) {
       return errorResponse(res, "Invalid user id", 400);
     }
 
-    if (req.user.role !== "super_admin" && req.user.id !== userId) {
-      return errorResponse(res, "You can only update your own avatar", 403);
+    if (!canAccessUser(req.user, userId)) {
+      return errorResponse(res, "You do not have permission to upload avatar for this user", 403);
     }
 
     if (!req.file) {
@@ -217,7 +223,7 @@ async function uploadUserAvatar(req, res) {
 
     return successResponse(res, "Avatar uploaded successfully", updatedUser, 200);
   } catch (error) {
-    console.error("Upload avatar error:", error);
+    console.error("Upload user avatar error:", error);
     return errorResponse(res, error.message || "Server error", 500);
   }
 }

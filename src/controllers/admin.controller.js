@@ -24,11 +24,11 @@ async function getAdminUsers(req, res) {
     const users = await prisma.user.findMany({
       select: getUserSelectFields(),
       orderBy: {
-        id: "asc",
+        createdAt: "desc",
       },
     });
 
-    return successResponse(res, "Admin users fetched successfully", users, 200);
+    return successResponse(res, "Users fetched successfully", users, 200);
   } catch (error) {
     console.error("Admin get users error:", error);
     return errorResponse(res, "Server error", 500);
@@ -37,7 +37,7 @@ async function getAdminUsers(req, res) {
 
 async function getAdminUserById(req, res) {
   try {
-    const userId = Number(req.params.id);
+    const userId = req.params.id;
 
     if (!userId) {
       return errorResponse(res, "Invalid user id", 400);
@@ -54,7 +54,7 @@ async function getAdminUserById(req, res) {
       return errorResponse(res, "User not found", 404);
     }
 
-    return successResponse(res, "Admin user fetched successfully", user, 200);
+    return successResponse(res, "User fetched successfully", user, 200);
   } catch (error) {
     console.error("Admin get user by id error:", error);
     return errorResponse(res, "Server error", 500);
@@ -63,32 +63,24 @@ async function getAdminUserById(req, res) {
 
 async function updateUserRole(req, res) {
   try {
-    const userId = Number(req.params.id);
+    const userId = req.params.id;
     const { role } = req.body;
 
     if (!userId) {
       return errorResponse(res, "Invalid user id", 400);
     }
 
-    if (!role) {
-      return errorResponse(res, "Role is required", 400);
-    }
-
     if (!VALID_ROLES.includes(role)) {
-      return errorResponse(
-        res,
-        "Invalid role. Role must be student, club_admin, or super_admin",
-        400
-      );
+      return errorResponse(res, "Invalid role", 400);
     }
 
-    const existingUser = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         id: userId,
       },
     });
 
-    if (!existingUser) {
+    if (!user) {
       return errorResponse(res, "User not found", 404);
     }
 
@@ -104,30 +96,30 @@ async function updateUserRole(req, res) {
 
     return successResponse(res, "User role updated successfully", updatedUser, 200);
   } catch (error) {
-    console.error("Update user role error:", error);
+    console.error("Admin update user role error:", error);
     return errorResponse(res, "Server error", 500);
   }
 }
 
 async function deleteUserById(req, res) {
   try {
-    const userId = Number(req.params.id);
+    const userId = req.params.id;
 
     if (!userId) {
       return errorResponse(res, "Invalid user id", 400);
     }
 
-    if (req.user.id === userId) {
+    if (userId === req.user.id) {
       return errorResponse(res, "You cannot delete your own account", 400);
     }
 
-    const existingUser = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         id: userId,
       },
     });
 
-    if (!existingUser) {
+    if (!user) {
       return errorResponse(res, "User not found", 404);
     }
 
@@ -141,7 +133,7 @@ async function deleteUserById(req, res) {
       id: userId,
     });
   } catch (error) {
-    console.error("Delete user error:", error);
+    console.error("Admin delete user error:", error);
     return errorResponse(res, "Server error", 500);
   }
 }

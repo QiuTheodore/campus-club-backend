@@ -41,6 +41,50 @@ This project is designed for frontend-backend separated development.
 | `club_admin` | Club administrator, can manage clubs created by themselves |
 | `super_admin` | System administrator, can manage all users, clubs, events, announcements, comments, and gallery images |
 
+### ID System
+
+All IDs now use UUID v4 strings.
+
+Example:
+
+```txt
+550e8400-e29b-41d4-a716-446655440000
+```
+
+This applies to:
+
+| Model | ID Type |
+|---|---|
+| User | UUID v4 string |
+| Club | UUID v4 string |
+| ClubApplication | UUID v4 string |
+| ClubMember | UUID v4 string |
+| Event | UUID v4 string |
+| EventSignup | UUID v4 string |
+| Announcement | UUID v4 string |
+| ClubComment | UUID v4 string |
+| ClubGalleryImage | UUID v4 string |
+
+Important frontend note:
+
+```txt
+All IDs are strings.
+Do not use Number(id) or parseInt(id).
+```
+
+Correct:
+
+```js
+const clubId = "550e8400-e29b-41d4-a716-446655440000";
+```
+
+Wrong:
+
+```js
+Number(clubId);
+parseInt(clubId);
+```
+
 ### Club Management
 
 - Create, update, and delete clubs
@@ -50,10 +94,7 @@ This project is designed for frontend-backend separated development.
   - `chineseName`
   - `englishName`
   - `name`
-- Club ID is now a random 6-character alphanumeric string, for example:
-  - `A7K9Q2`
-  - `M3P8XD`
-  - `Q92KLA`
+- Club ID is now a UUID v4 string
 
 ### Club Application
 
@@ -89,8 +130,9 @@ This project is designed for frontend-backend separated development.
 
 ### Club Comments
 
-- Comments now belong to clubs, not events
+- Comments belong to clubs, not events
 - Logged-in users can comment on clubs
+- Each comment includes sender information
 - Users can delete their own comments
 - Club admin can delete comments under their own clubs
 - Super admin can delete any comment
@@ -169,7 +211,6 @@ campus-club-backend
 │   │   └── upload.middleware.js
 │   │
 │   └── utils
-│       ├── id.js
 │       ├── password.js
 │       ├── response.js
 │       └── token.js
@@ -288,7 +329,7 @@ After login or register, the backend returns a JWT token:
   "data": {
     "token": "JWT_TOKEN",
     "user": {
-      "id": 1,
+      "id": "550e8400-e29b-41d4-a716-446655440000",
       "email": "super@wku.edu.cn",
       "role": "super_admin"
     }
@@ -306,20 +347,29 @@ Authorization: Bearer JWT_TOKEN
 
 ## Important Frontend Notes
 
-### 1. Club ID is a string
+### 1. All IDs are strings
 
-Club IDs are no longer simple numbers.
+All IDs are UUID v4 strings.
 
-Correct:
+Examples:
 
-```js
-const clubId = "A7K9Q2";
+```txt
+userId: 550e8400-e29b-41d4-a716-446655440000
+clubId: 1f3b6f1a-9c12-4d3a-88f0-b8c91f8e2e31
+eventId: a28f4d4c-55f4-45a4-a05e-9b3e3c5b7f92
 ```
 
 Do not do this:
 
 ```js
-Number(clubId);
+Number(id);
+parseInt(id);
+```
+
+Use IDs directly as strings:
+
+```js
+fetch(`http://localhost:3000/api/clubs/${clubId}`);
 ```
 
 ### 2. Club supports bilingual names
@@ -351,7 +401,13 @@ GET /api/clubs/:clubId/events
 Use this instead:
 
 ```txt
-GET /api/events?clubId=A7K9Q2
+GET /api/events?clubId=<clubId>
+```
+
+Example:
+
+```txt
+GET /api/events?clubId=1f3b6f1a-9c12-4d3a-88f0-b8c91f8e2e31
 ```
 
 ### 4. Comments belong to clubs
@@ -541,6 +597,9 @@ After running `node prisma/seed.js`, demo accounts may include:
 
 If `clubadmin@wku.edu.cn` is still a student, use the super admin account to promote it to `club_admin`.
 
+Passwords are stored as bcrypt hashes in the database.  
+The database should not store plain text passwords.
+
 ---
 
 ## Recommended Demo Flow
@@ -624,19 +683,20 @@ The backend currently supports:
 
 - User registration and login
 - JWT authentication
+- bcrypt password encryption
 - Role-based access control
 - Super admin user management
+- UUID v4 IDs for all database models
 - Bilingual club management
-- Random 6-character club IDs
 - Club application review
 - Club member management
 - Event publishing
 - Event signup
 - Event signup count and list
 - Announcement management
-- Club comments
+- Club comments with sender information
 - Club gallery
 - Image uploads
-- KOOK-style API documentation in `API_DOCS.md`
+- API documentation in `API_DOCS.md`
 
 This backend is ready for frontend integration and project demo.

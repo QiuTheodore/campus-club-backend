@@ -44,16 +44,8 @@ async function getAllAnnouncements(req, res) {
 
     if (keyword) {
       where.OR = [
-        {
-          title: {
-            contains: keyword,
-          },
-        },
-        {
-          content: {
-            contains: keyword,
-          },
-        },
+        { title: { contains: keyword } },
+        { content: { contains: keyword } },
       ];
     }
 
@@ -75,12 +67,8 @@ async function getAllAnnouncements(req, res) {
       where,
       include: getAnnouncementIncludeFields(),
       orderBy: [
-        {
-          isPinned: "desc",
-        },
-        {
-          createdAt: "desc",
-        },
+        { isPinned: "desc" },
+        { createdAt: "desc" },
       ],
     });
 
@@ -98,7 +86,7 @@ async function getAllAnnouncements(req, res) {
 
 async function getAnnouncementById(req, res) {
   try {
-    const announcementId = Number(req.params.id);
+    const announcementId = req.params.id;
 
     if (!announcementId) {
       return errorResponse(res, "Invalid announcement id", 400);
@@ -152,12 +140,8 @@ async function getClubAnnouncements(req, res) {
       },
       include: getAnnouncementIncludeFields(),
       orderBy: [
-        {
-          isPinned: "desc",
-        },
-        {
-          createdAt: "desc",
-        },
+        { isPinned: "desc" },
+        { createdAt: "desc" },
       ],
     });
 
@@ -244,7 +228,7 @@ async function createAnnouncementForClub(req, res) {
 
 async function updateAnnouncementById(req, res) {
   try {
-    const announcementId = Number(req.params.id);
+    const announcementId = req.params.id;
 
     if (!announcementId) {
       return errorResponse(res, "Invalid announcement id", 400);
@@ -312,7 +296,7 @@ async function updateAnnouncementById(req, res) {
 
 async function deleteAnnouncementById(req, res) {
   try {
-    const announcementId = Number(req.params.id);
+    const announcementId = req.params.id;
 
     if (!announcementId) {
       return errorResponse(res, "Invalid announcement id", 400);
@@ -368,12 +352,8 @@ async function getManagedAnnouncements(req, res) {
       where,
       include: getAnnouncementIncludeFields(),
       orderBy: [
-        {
-          isPinned: "desc",
-        },
-        {
-          createdAt: "desc",
-        },
+        { isPinned: "desc" },
+        { createdAt: "desc" },
       ],
     });
 

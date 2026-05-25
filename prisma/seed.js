@@ -1,13 +1,17 @@
-const prisma = require("../src/config/prisma");
+const { PrismaClient } = require("@prisma/client");
 const { hashPassword } = require("../src/utils/password");
 
-async function main() {
-  const defaultPassword = await hashPassword("123456");
+const prisma = new PrismaClient();
 
-  const users = [
-    {
+async function main() {
+  const password = await hashPassword("123456");
+
+  const superAdmin = await prisma.user.upsert({
+    where: {
       email: "super@wku.edu.cn",
-      password: defaultPassword,
+    },
+    update: {
+      password,
       role: "super_admin",
       name: "Super Admin",
       studentId: "9000001",
@@ -15,61 +19,100 @@ async function main() {
       grade: "Staff",
       bio: "System super administrator.",
     },
-    {
+    create: {
+      email: "super@wku.edu.cn",
+      password,
+      role: "super_admin",
+      name: "Super Admin",
+      studentId: "9000001",
+      major: "Administration",
+      grade: "Staff",
+      bio: "System super administrator.",
+    },
+  });
+
+  const clubAdmin = await prisma.user.upsert({
+    where: {
       email: "clubadmin@wku.edu.cn",
-      password: defaultPassword,
+    },
+    update: {
+      password,
       role: "student",
       name: "Club Admin Candidate",
       studentId: "9000002",
       major: "Computer Science",
       grade: "Senior",
-      bio: "This account will be promoted to club admin during demo.",
+      bio: "Demo club admin candidate.",
     },
-    {
+    create: {
+      email: "clubadmin@wku.edu.cn",
+      password,
+      role: "student",
+      name: "Club Admin Candidate",
+      studentId: "9000002",
+      major: "Computer Science",
+      grade: "Senior",
+      bio: "Demo club admin candidate.",
+    },
+  });
+
+  const student1 = await prisma.user.upsert({
+    where: {
       email: "student1@wku.edu.cn",
-      password: defaultPassword,
+    },
+    update: {
+      password,
       role: "student",
       name: "Student One",
       studentId: "9000003",
       major: "Computer Science",
       grade: "Junior",
-      bio: "Demo student account one.",
+      bio: "Demo student account.",
     },
-    {
+    create: {
+      email: "student1@wku.edu.cn",
+      password,
+      role: "student",
+      name: "Student One",
+      studentId: "9000003",
+      major: "Computer Science",
+      grade: "Junior",
+      bio: "Demo student account.",
+    },
+  });
+
+  const student2 = await prisma.user.upsert({
+    where: {
       email: "student2@wku.edu.cn",
-      password: defaultPassword,
+    },
+    update: {
+      password,
       role: "student",
       name: "Student Two",
       studentId: "9000004",
-      major: "Business",
+      major: "Marketing",
       grade: "Sophomore",
-      bio: "Demo student account two.",
+      bio: "Another demo student account.",
     },
-  ];
+    create: {
+      email: "student2@wku.edu.cn",
+      password,
+      role: "student",
+      name: "Student Two",
+      studentId: "9000004",
+      major: "Marketing",
+      grade: "Sophomore",
+      bio: "Another demo student account.",
+    },
+  });
 
-  for (const user of users) {
-    await prisma.user.upsert({
-      where: {
-        email: user.email,
-      },
-      update: {
-        role: user.role,
-        name: user.name,
-        studentId: user.studentId,
-        major: user.major,
-        grade: user.grade,
-        bio: user.bio,
-      },
-      create: user,
-    });
-  }
-
-  console.log("Demo users created successfully.");
-  console.log("Password for all demo users: 123456");
-  console.log("super@wku.edu.cn -> super_admin");
-  console.log("clubadmin@wku.edu.cn -> student, promote it during demo");
-  console.log("student1@wku.edu.cn -> student");
-  console.log("student2@wku.edu.cn -> student");
+  console.log("Seed completed.");
+  console.log({
+    superAdmin,
+    clubAdmin,
+    student1,
+    student2,
+  });
 }
 
 main()

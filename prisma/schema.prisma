@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
 
   email     String   @unique
   password  String
@@ -35,7 +35,7 @@ model User {
 }
 
 model Club {
-  id          String   @id
+  id          String   @id @default(uuid())
 
   sourceId    Int?     @unique
   name        String   @unique
@@ -50,7 +50,7 @@ model Club {
   reviewer    String?
   status      String   @default("active")
 
-  createdById Int?
+  createdById String?
   createdBy   User?    @relation("ClubCreator", fields: [createdById], references: [id], onDelete: SetNull)
 
   applications  ClubApplication[]
@@ -65,14 +65,14 @@ model Club {
 }
 
 model ClubApplication {
-  id       Int    @id @default(autoincrement())
+  id       String @id @default(uuid())
 
   clubId   String
-  userId   Int
+  userId   String
   reason   String
   status   String @default("pending")
 
-  reviewedById Int?
+  reviewedById String?
   reviewedAt   DateTime?
 
   club       Club  @relation(fields: [clubId], references: [id], onDelete: Cascade)
@@ -86,10 +86,10 @@ model ClubApplication {
 }
 
 model ClubMember {
-  id       Int    @id @default(autoincrement())
+  id       String @id @default(uuid())
 
   clubId   String
-  userId   Int
+  userId   String
   role     String @default("member")
 
   club     Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
@@ -101,7 +101,7 @@ model ClubMember {
 }
 
 model Event {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
 
   clubId      String
   title       String
@@ -121,10 +121,10 @@ model Event {
 }
 
 model EventSignup {
-  id       Int    @id @default(autoincrement())
+  id       String @id @default(uuid())
 
-  eventId  Int
-  userId   Int
+  eventId  String
+  userId   String
   status   String @default("registered")
 
   event    Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -137,10 +137,10 @@ model EventSignup {
 }
 
 model ClubComment {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
 
   clubId    String
-  userId    Int
+  userId    String
   content   String
 
   club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
@@ -151,10 +151,10 @@ model ClubComment {
 }
 
 model Announcement {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
 
   clubId      String
-  createdById Int?
+  createdById String?
 
   title       String
   content     String
@@ -169,10 +169,10 @@ model Announcement {
 }
 
 model ClubGalleryImage {
-  id           Int      @id @default(autoincrement())
+  id           String   @id @default(uuid())
 
   clubId       String
-  uploadedById Int?
+  uploadedById String?
 
   imageUrl     String
   title        String?

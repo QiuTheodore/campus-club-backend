@@ -1,6 +1,5 @@
 const prisma = require("../config/prisma");
 const { successResponse, errorResponse } = require("../utils/response");
-const { generateUniqueClubId } = require("../utils/id");
 
 function getClubSelectFields() {
   return {
@@ -33,6 +32,7 @@ function getClubSelectFields() {
         events: true,
         announcements: true,
         galleryImages: true,
+        comments: true,
       },
     },
     createdAt: true,
@@ -86,36 +86,12 @@ async function getAllClubs(req, res) {
 
     if (keyword) {
       where.OR = [
-        {
-          name: {
-            contains: keyword,
-          },
-        },
-        {
-          englishName: {
-            contains: keyword,
-          },
-        },
-        {
-          chineseName: {
-            contains: keyword,
-          },
-        },
-        {
-          description: {
-            contains: keyword,
-          },
-        },
-        {
-          purpose: {
-            contains: keyword,
-          },
-        },
-        {
-          mission: {
-            contains: keyword,
-          },
-        },
+        { name: { contains: keyword } },
+        { englishName: { contains: keyword } },
+        { chineseName: { contains: keyword } },
+        { description: { contains: keyword } },
+        { purpose: { contains: keyword } },
+        { mission: { contains: keyword } },
       ];
     }
 
@@ -195,11 +171,8 @@ async function createClub(req, res) {
       return errorResponse(res, "Club name, English name, or Chinese name is required", 400);
     }
 
-    const clubId = await generateUniqueClubId(prisma);
-
     const club = await prisma.club.create({
       data: {
-        id: clubId,
         sourceId: sourceId !== undefined && sourceId !== null && sourceId !== "" ? Number(sourceId) : null,
         name: finalName,
         chineseName: normalizeOptionalString(chineseName),
@@ -216,17 +189,8 @@ async function createClub(req, res) {
       select: getClubSelectFields(),
     });
 
-    await prisma.clubMember.upsert({
-      where: {
-        clubId_userId: {
-          clubId: club.id,
-          userId: req.user.id,
-        },
-      },
-      update: {
-        role: "president",
-      },
-      create: {
+    await prisma.clubMember.create({
+      data: {
         clubId: club.id,
         userId: req.user.id,
         role: "president",
@@ -593,7 +557,7 @@ async function getClubApplications(req, res) {
 async function approveClubApplication(req, res) {
   try {
     const clubId = req.params.clubId;
-    const applicationId = Number(req.params.applicationId);
+    const applicationId = req.params.applicationId;
 
     if (!clubId || !applicationId) {
       return errorResponse(res, "Invalid club id or application id", 400);
@@ -687,7 +651,7 @@ async function approveClubApplication(req, res) {
 async function rejectClubApplication(req, res) {
   try {
     const clubId = req.params.clubId;
-    const applicationId = Number(req.params.applicationId);
+    const applicationId = req.params.applicationId;
 
     if (!clubId || !applicationId) {
       return errorResponse(res, "Invalid club id or application id", 400);
@@ -799,7 +763,7 @@ async function getClubMembers(req, res) {
 async function removeClubMember(req, res) {
   try {
     const clubId = req.params.clubId;
-    const userId = Number(req.params.userId);
+    const userId = req.params.userId;
 
     if (!clubId || !userId) {
       return errorResponse(res, "Invalid club id or user id", 400);
