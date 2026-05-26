@@ -2,47 +2,68 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-const avatarDir = path.join(__dirname, "..", "..", "uploads", "avatars");
-const clubLogoDir = path.join(__dirname, "..", "..", "uploads", "clubs");
-const eventPosterDir = path.join(__dirname, "..", "..", "uploads", "events");
-const galleryDir = path.join(__dirname, "..", "..", "uploads", "gallery");
+const rootUploadDir = path.join(__dirname, "..", "..", "uploads");
 
-function ensureDirExists(dir) {
+function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 }
 
-ensureDirExists(avatarDir);
-ensureDirExists(clubLogoDir);
-ensureDirExists(eventPosterDir);
-ensureDirExists(galleryDir);
+function createStorage(folderName) {
+  const uploadDir = path.join(rootUploadDir, folderName);
+  ensureDir(uploadDir);
 
-function imageFileFilter(req, file, cb) {
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
-
-  if (!allowedTypes.includes(file.mimetype)) {
-    return cb(new Error("Only JPG, PNG, and WEBP images are allowed"), false);
-  }
-
-  cb(null, true);
-}
-
-function createStorage(destinationDir, prefix) {
   return multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, destinationDir);
+      cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-      const ext = path.extname(file.originalname).toLowerCase();
-      const fileName = `${prefix}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-      cb(null, fileName);
+      const ext = path.extname(file.originalname || "").toLowerCase();
+      const safeExt = ext || getExtByMimeType(file.mimetype);
+      const uniqueName = `${folderName}-${Date.now()}-${Math.round(
+        Math.random() * 1e9
+      )}${safeExt}`;
+
+      cb(null, uniqueName);
     },
   });
 }
 
+function getExtByMimeType(mimetype) {
+  const map = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+    "image/avif": ".avif",
+  };
+
+  return map[mimetype] || "";
+}
+
+function imageFileFilter(req, file, cb) {
+  const allowedMimeTypes = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/avif",
+  ];
+
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    return cb(null, true);
+  }
+
+  return cb(
+    new Error("Only image files are allowed: jpg, jpeg, png, webp, gif, avif"),
+    false
+  );
+}
+
 const uploadAvatar = multer({
-  storage: createStorage(avatarDir, "avatar"),
+  storage: createStorage("avatars"),
   fileFilter: imageFileFilter,
   limits: {
     fileSize: 2 * 1024 * 1024,
@@ -50,7 +71,7 @@ const uploadAvatar = multer({
 });
 
 const uploadClubLogo = multer({
-  storage: createStorage(clubLogoDir, "club-logo"),
+  storage: createStorage("clubs"),
   fileFilter: imageFileFilter,
   limits: {
     fileSize: 2 * 1024 * 1024,
@@ -58,15 +79,15 @@ const uploadClubLogo = multer({
 });
 
 const uploadEventPoster = multer({
-  storage: createStorage(eventPosterDir, "event-poster"),
+  storage: createStorage("events"),
   fileFilter: imageFileFilter,
   limits: {
-    fileSize: 2 * 1024 * 1024,
+    fileSize: 5 * 1024 * 1024,
   },
 });
 
 const uploadGalleryImage = multer({
-  storage: createStorage(galleryDir, "gallery"),
+  storage: createStorage("gallery"),
   fileFilter: imageFileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024,

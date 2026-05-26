@@ -11,6 +11,7 @@ const eventRoutes = require("./routes/event.routes");
 const announcementRoutes = require("./routes/announcement.routes");
 const commentRoutes = require("./routes/comment.routes");
 const galleryRoutes = require("./routes/gallery.routes");
+const highlightRoutes = require("./routes/highlight.routes");
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/clubs", clubRoutes);
+app.use("/api/highlights", highlightRoutes);
 app.use("/api", eventRoutes);
 app.use("/api", announcementRoutes);
 app.use("/api", commentRoutes);
